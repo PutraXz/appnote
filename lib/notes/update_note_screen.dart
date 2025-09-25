@@ -1,40 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/notes/notes_screen.dart';
-import '../models/note_model.dart';
 import '../database/database_helper.dart';
+import 'notes_screen.dart';
+import '../models/note_model.dart';
 
-class CreateNoteScreen extends StatefulWidget {
-  const CreateNoteScreen({super.key});
+class UpdateNoteScreen extends StatefulWidget {
+  final NoteModel note;
+  const UpdateNoteScreen({super.key, required this.note});
   @override
-  State<CreateNoteScreen> createState() => _CreateNoteScreenState();
+  State<UpdateNoteScreen> createState() => _UpdateNoteScreenState();
 }
 
-class _CreateNoteScreenState extends State<CreateNoteScreen> {
-  final titleController = TextEditingController();
-  final contentController = TextEditingController();
+class _UpdateNoteScreenState extends State<UpdateNoteScreen> {
+  late TextEditingController titleController;
+  late TextEditingController contentController;
 
   final formKey = GlobalKey<FormState>();
-
   final db = DatabaseHelper();
-  Future<void> createNote() async {
+
+  @override
+  void initState() {
+    super.initState();
+    titleController = TextEditingController(text: widget.note.noteTitle);
+    contentController = TextEditingController(text: widget.note.noteContent);
+  }
+
+  Future<void> updateNote() async {
     try {
-      int result = await db.createNote(
-        NoteModel(
-          noteTitle: titleController.text,
-          noteContent: contentController.text,
-          createdAt: DateTime.now().toIso8601String(),
-        ),
+      int result = await db.updateNote(
+        titleController.text,
+        contentController.text,
+        widget.note.noteId!,
       );
       if (!mounted) return;
       if (result > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Note created successfully!'),
+            content: Text('Note updated successfully!'),
             backgroundColor: Colors.teal[400],
             behavior: SnackBarBehavior.floating,
           ),
         );
-        // Navigasi ke halaman Notes
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const NotesScreen()),
@@ -42,7 +47,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Failed to create note. Please try again.'),
+            content: Text('Failed to update note. Please try again.'),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -52,7 +57,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('An error occurred. Please try again.'),
+          content: Text('An error occurred while updating the note.'),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
@@ -65,21 +70,12 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.teal,
-        title: const Text("Create Note", style: TextStyle(color: Colors.white)),
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const NotesScreen()),
-            );
-          },
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
+        title: const Text("Update Note", style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
-                createNote();
+                updateNote();
               }
             },
             icon: const Icon(Icons.check, color: Colors.white),
@@ -93,36 +89,37 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // TextFormField untuk input judul
+              const SizedBox(height: 5),
+              // TextField untuk input judul
               TextFormField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: "Title",
-                  border: OutlineInputBorder(),
-                ),
                 validator: (value) {
                   if (value!.isEmpty) {
                     return "Title is required";
                   }
                   return null;
                 },
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: "Title",
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 10),
               // TextField untuk input isi catatan/note
               TextFormField(
-                controller: contentController,
-                maxLines: 5,
-                decoration: const InputDecoration(
-                  labelText: "Content",
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
                 validator: (value) {
                   if (value!.isEmpty) {
                     return "Content is required";
                   }
                   return null;
                 },
+                maxLines: 5,
+                controller: contentController,
+                decoration: const InputDecoration(
+                  labelText: "Content",
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
               ),
             ],
           ),

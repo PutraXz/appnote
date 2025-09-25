@@ -1,3 +1,4 @@
+import 'package:myapp/models/note_model.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/user_model.dart';
@@ -60,5 +61,46 @@ class DatabaseHelper {
   Future<int> createAccount(UserModel user) async {
     final db = await database;
     return await db.insert('users', user.toMap());
+  }
+
+  // Create note method
+  Future<int> createNote(NoteModel note) async {
+    final Database db = await database;
+    return db.insert('notes', note.toMap());
+  }
+
+  // Get notes method
+  Future<List<NoteModel>> getNotes() async {
+    final db = await database;
+    final result = await db.query('notes');
+    return result.map((e) => NoteModel.fromMap(e)).toList();
+  }
+
+  // Update note method
+  Future<int> updateNote(String title, String content, int noteId) async {
+    final Database db = await database;
+    return db.update(
+      'notes',
+      {'noteTitle': title, 'noteContent': content},
+      where: 'noteId = ?',
+      whereArgs: [noteId],
+    );
+  }
+
+  // Delete notes method
+  Future<int> deleteNote(int id) async {
+    final Database db = await database;
+    return db.delete('notes', where: 'noteId = ?', whereArgs: [id]);
+  }
+
+  // Search notes method
+  Future<List<NoteModel>> searchNotes(String keyword) async {
+    final Database db = await database;
+    final List<Map<String, Object?>> result = await db.query(
+      'notes',
+      where: 'LOWER(noteTitle) LIKE ? OR LOWER(noteContent) LIKE ?',
+      whereArgs: ['%${keyword.toLowerCase()}%', '%${keyword.toLowerCase()}%'],
+    );
+    return result.map((map) => NoteModel.fromMap(map)).toList();
   }
 }
